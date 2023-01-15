@@ -17,7 +17,7 @@ import (
 
 type Comment struct {
 	ID      primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Time    time.Time          `json:"time" bson:"time"`
+	Time    time.Time          `json:"_time,omitempty" bson:"time"`
 	Comment string             `json:"comment" bson:"comment"`
 }
 
@@ -81,6 +81,7 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 	var comment Comment
 	_ = json.NewDecoder(r.Body).Decode(&comment)
 	comment.ID = primitive.NewObjectID()
+	comment.Time = time.Now()
 	comments = append(comments, comment)
 	json.NewEncoder(w).Encode(comment)
 }
