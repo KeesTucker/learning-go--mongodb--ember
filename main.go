@@ -27,14 +27,14 @@ const FORUM_DATABASE_NAME = "forum"
 const COMMENT_COLLECTION_NAME = "comments"
 
 var client *mongo.Client
-var comments []Comment
 
 func main() {
 	// Set client options
 	clientOptions := options.Client().ApplyURI("mongodb://192.168.1.3:27017") // mongodb://mongo:27017
 
 	// Connect to MongoDB
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	var err error
+	client, err = mongo.Connect(context.TODO(), clientOptions)
 
 	if err != nil {
 		log.Fatal(err)
@@ -46,6 +46,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Println("Connected to MongoDB!")
 
 	// Initialize router
 	router := mux.NewRouter()
@@ -132,26 +134,51 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var comment Comment
 	_ = json.NewDecoder(r.Body).Decode(&comment)
-	for i, c := range comments {
-		if c.ID.Hex() == params["id"] {
-			comment.ID = c.ID
-			comments[i] = comment
-			json.NewEncoder(w).Encode(comment)
-			return
-		}
+
+	// Define the collection
+	collection := client.Database(FORUM_DATABASE_NAME).Collection(COMMENT_COLLECTION_NAME)
+
+	// Convert the id string to an ObjectID
+	id, _ := primitive.ObjectIDFromHex(params["id"])
+
+	// Create the update filter
+	filter := bson.M{"_id": id}
+
+	// Create the update document
+	update := bson.M{"$set": bson.M{"comment": comment.Comment}}
+
+	// Update the document in the collection
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		log.Fatal(err)
 	}
-	json.NewEncoder(w).Encode(comments)
+
+	// Find the updated document
+	var updatedComment Comment
+	err = collection.FindOne(context.TODO(), filter).Decode(&updatedComment)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	json.NewEncoder(w).Encode(updatedComment)
 }
 
 // DeleteComment deletes a comment by id
 func DeleteComment(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Delete")
 	params := mux.Vars(r)
-	for i, c := range comments {
-		if c.ID.Hex() == params["id"] {
-			comments = append(comments[:i], comments[i+1:]...)
-			break
-		}
+
+	// Get the collection
+	collection := client.Database(FORUM_DATABASE_NAME).Collection(COMMENT_COLLECTION_NAME)
+
+	// Convert the ID from hex string to an ObjectID
+	id, _ := primitive.ObjectIDFromHex(params["id"])
+
+	// Delete the document with the matching ID
+	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": id})
+	if err != nil {
+		log.Fatal(err)
 	}
-	json.NewEncoder(w).Encode(comments)
+
+	json.NewEncoder(w).Encode("Comment Deleted")
 }
