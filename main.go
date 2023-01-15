@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 type Comment struct {
@@ -53,6 +54,7 @@ func main() {
 
 	// Initialize router
 	router := mux.NewRouter()
+	handler := cors.Default().Handler(router)
 
 	// Route handles & endpoints
 	router.HandleFunc("/"+COMMENT_COLLECTION_NAME, GetComments).Methods("GET")
@@ -62,7 +64,7 @@ func main() {
 	router.HandleFunc("/"+COMMENT_COLLECTION_NAME+"/{id}", DeleteComment).Methods("DELETE")
 
 	// Start server
-	log.Fatal(http.ListenAndServe(":"+RESTFULAPI_PORT, router))
+	log.Fatal(http.ListenAndServe(":"+RESTFULAPI_PORT, handler))
 }
 
 // GetComments retrieves all comments
