@@ -24,14 +24,14 @@ type Comment struct {
 
 const RESTFULAPI_PORT = "1313"
 const FORUM_DATABASE_NAME = "forum"
-const COMMENT_COLLECTION_NAME = "commends"
+const COMMENT_COLLECTION_NAME = "comments"
 
 var client *mongo.Client
 var comments []Comment
 
 func main() {
 	// Set client options
-	clientOptions := options.Client().ApplyURI("mongodb://mongo:27017") // mongodb://mongo:27017
+	clientOptions := options.Client().ApplyURI("mongodb://192.168.1.3:27017") // mongodb://mongo:27017
 
 	// Connect to MongoDB
 	client, err := mongo.Connect(context.TODO(), clientOptions)
