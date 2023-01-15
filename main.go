@@ -26,7 +26,7 @@ var comments []Comment
 
 func main() {
 	// Set client options
-	clientOptions := options.Client().ApplyURI("mongodb://192.168.1.3:27017") // mongodb://mongo:27017
+	clientOptions := options.Client().ApplyURI("mongodb://mongo:27017") // mongodb://mongo:27017
 
 	// Connect to MongoDB
 	client, err := mongo.Connect(context.TODO(), clientOptions)
@@ -53,20 +53,22 @@ func main() {
 	router.HandleFunc("/comments/{id}", DeleteComment).Methods("DELETE")
 
 	// Start server
-	log.Fatal(http.ListenAndServe(":8000", router))
+	log.Fatal(http.ListenAndServe(":1313", router))
 }
 
 // GetComments retrieves all comments
 func GetComments(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Get All")
 	json.NewEncoder(w).Encode(comments)
 }
 
 // GetComment retrieves a single comment by id
 func GetComment(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Get")
 	params := mux.Vars(r)
-	for _, item := range comments {
-		if item.ID == params["id"] {
-			json.NewEncoder(w).Encode(item)
+	for _, comment := range comments {
+		if comment.ID.String() == params["id"] {
+			json.NewEncoder(w).Encode(comment)
 			return
 		}
 	}
@@ -75,21 +77,23 @@ func GetComment(w http.ResponseWriter, r *http.Request) {
 
 // CreateComment creates a new comment
 func CreateComment(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Post")
 	var comment Comment
 	_ = json.NewDecoder(r.Body).Decode(&comment)
-	comment.ID = fmt.Sprintf("%d", len(comments)+1)
+	comment.ID = primitive.NewObjectID()
 	comments = append(comments, comment)
 	json.NewEncoder(w).Encode(comment)
 }
 
 // UpdateComment updates an existing comment by id
 func UpdateComment(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Patch")
 	params := mux.Vars(r)
 	var comment Comment
 	_ = json.NewDecoder(r.Body).Decode(&comment)
-	for i, item := range comments {
-		if item.ID == params["id"] {
-			comment.ID = params["id"]
+	for i, c := range comments {
+		if c.ID.String() == params["id"] {
+			comment.ID = c.ID
 			comments[i] = comment
 			json.NewEncoder(w).Encode(comment)
 			return
@@ -100,9 +104,10 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 
 // DeleteComment deletes a comment by id
 func DeleteComment(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Delete")
 	params := mux.Vars(r)
-	for i, item := range comments {
-		if item.ID == params["id"] {
+	for i, c := range comments {
+		if c.ID.String() == params["id"] {
 			comments = append(comments[:i], comments[i+1:]...)
 			break
 		}
